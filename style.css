@@ -1,0 +1,113 @@
+html, body {
+    margin: 0;
+    background-color: grey;
+    font-family: Arial;
+}
+
+#content {
+    xheight: 300px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: auto;
+}
+
+#carpetdiv {
+    xzoom: 3;
+}
+#options {
+    float:right;
+    -font-size:0.75em;
+    -text-align: right;
+}
+.paintdiv {
+    float:left;
+    sdisplay:inline-block;
+}
+
+.paintcanvas {
+    border: 1px solid #333;
+    order: solid black 1px;
+    margin: 1px;
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -o-crisp-edges;
+    image-rendering: pixelated;
+
+    background: linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1) 0), linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1) 0), rgb(255, 255, 255);
+    background-position: 0 0, 10px 10px;
+    background-size: 20px 20px;
+
+    cursor: crosshair;
+}
+
+.palettecanvas {
+    border: 1px solid #333;
+    order: solid black 1px;
+    margin: 1px;
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -o-crisp-edges;
+    image-rendering: pixelated;
+
+    background: linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1) 0),
+                linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1) 0), rgb(200, 200, 200);
+    background-position: 0 0, 15px 15px;
+    background-size: 30px 30px;
+}
+
+.smallbut {
+    height: 24px;
+    width: 32px;
+}
+
+.spacer {
+    height: 32px;
+}
+
+.currentcolor {
+    border: 2px solid black;
+    margin: 2px;
+    width:32px;
+    height:32px;
+    display:inline-block;
+    xfloat:left;
+}
+
+.number-input {
+    width : 50px;
+}
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: inner-spin-button !important;
+}
+
+*.unselectable {
+   -moz-user-select: -moz-none;
+   -khtml-user-select: none;
+   -webkit-user-select: none;
+   user-select: none;
+}
+
+.statelink, .removestatelink, .downloadstatelink {
+    cursor: pointer;
+}
+
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+
+#dropzone {
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    vertical-align: middle;
+    align-items: center;
+    border: 2px dashed #000000;
+    display: none;
+    width:256px;
+    height:256px;
+}

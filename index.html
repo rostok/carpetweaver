@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>carpet weaver</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" />
+    <link href="style.css" rel="stylesheet" />
+
+    <script src="lib/jquery-1.11.3.min.js"></script>
+    <script src="lib/jquery.hotkeys.js"></script>
+    <script src="lib/FileSaver.js"></script>
+    <script src="lib/jszip.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <script src="lib/jquery-ui.min.js"></script>
+
+    <script src="utils.js"></script>
+    <script src="canvasUtils.js"></script>
+    <script src="weaver.js"></script>
+    <script src="main.js"></script>
+</head>
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-10 nopadding">
+                <div id="content" class="unselectable">
+                </div>
+                <div class="row">
+                    <div class="col-sm-10 xnopadding">
+                        <div id="carpetdiv">
+                            <canvas id="carpet" class="paintcanvas" width=320 height=200 /></canvas>
+                        </div>
+                        <div id='info'>info</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 nopadding">
+                <div id=options>
+                    <div id="radioupdate">
+                        <label for=radioupdate>update</label>
+                        <br/>
+                        <input type="radio" id="upauto"   name=radioupdate><label for="upauto">auto</label><br/>
+                        <input type="radio" id="upchange" name=radioupdate><label for="upchange">change</label><br/>
+                        <input type="radio" id="upmanual" name=radioupdate><label for="upmanual">manual</label><br/>
+                    </div>
+                    <div id="radioborder">
+                        <label for=radioborder>border</label>
+                        <br/>
+                        <input type="radio" id="AA"  name=radioborder><label for="AA">AA</label><br/>
+                        <input type="radio" id="AB"  name=radioborder><label for="AB">AB</label><br/>
+                        <input type="radio" id="ABA" name=radioborder><label for="ABA">ABA</label><br/>
+                    </div>
+                    <label for=width>width</label>
+                    <input id=width type=number class="number-input" value='320' />
+                    <br/>
+                    <label for=height>height</label>
+                    <input id=height type=number class="number-input" value='200' />
+                    <br/>
+                    <label for=zoom>zoom</label>
+                    <input id=zoom type=number class="number-input" value='2' />
+                    <br/>
+                    <label for=name>name</label>
+                    <input id=name type=text style='width:140px' value='defaultState' />
+                    <br/>
+                    <!-- <button onclick="updateStateLinks();">update</button> -->
+                    <!-- <hr/> -->
+                        <div id="dropzone">
+                            <center>
+                                <h4>Drop files here!<br/>
+                                <span class='glyphicon glyphicon-plus-sign'></span>
+                            </h4>
+                            </center>
+                        </div>
+                    <div id="states">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="row">
+        <hr/>
+        <button id=defaultState>default</button>-
+        <textarea style='width:100%' id='text'></textarea>
+    </div> -->
+</div>
+</body>
+</html>
