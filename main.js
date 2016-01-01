@@ -39,6 +39,28 @@ function updateStateLinks() {
         d = new Date().toISOString();
         saveAs(content, "allcarpets"+d.slice(0, 10)+"-"+d.slice(11, 19).split(":").join("-")+".zip");
     });
+    $("#states").append($("<br/><span id='renderall' class='label label-success downloadstatelink'>render all carpets <span class='glyphicon glyphicon-camera'/></span>"));
+    $("#renderall").click(function(){
+        loaders = [];
+        var zip = new JSZip();
+        a = Object.getOwnPropertyNames(window.localStorage);
+        for (var i in a)
+        {
+            var n = a[i];
+            loaders.push(loadState(JSON.parse(window.localStorage.getItem(n)), function() {
+                                                console.log("callback() state loaded and weaved", carpetOptions.name, i);
+                                                setupAndWeave();
+                                                zip.file(carpetOptions.name+".png", dataURL2bin(carpet.toDataURL()) );
+                                            } ));
+        }
+        $.when.apply(null, loaders).done(function() {
+            console.log("when.done()");
+            // callback when everything's done
+            var content = zip.generate({type:"blob"});
+            d = new Date().toISOString();
+            saveAs(content, "renderedcarpets"+d.slice(0, 10)+"-"+d.slice(11, 19).split(":").join("-")+".zip");
+        });
+    });
 }
 
 function copy(src, dst) {
@@ -102,7 +124,10 @@ function loadImageDataIntoCanvas(canvas, imageData) {
     return deferred.promise();
 }
 
-function loadState(state) {
+function loadState(state, callback = undefined) {
+    console.log("loadState()")
+    var deferred = $.Deferred();
+
     // deferring image loading http://stackoverflow.com/questions/8645143/wait-for-image-to-be-loaded-before-going-on
     var loaders = [];
     loaders.push(loadImageDataIntoCanvas(corner, state.corner));
@@ -113,23 +138,27 @@ function loadState(state) {
     loaders.push(loadImageDataIntoCanvas(tassel, state.tassel));
     loaders.push(loadImageDataIntoCanvas(palette, state.palette));
 
-    carpetOptions.borderStyle = state.borderStyle;
-    carpetOptions.width = parseInt(state.width);
-    carpetOptions.height = parseInt(state.height);
-    carpetOptions.update = state.update;
-    carpetOptions.zoom = state.zoom;
-    if (state.name!="history") carpetOptions.name = state.name;
-
     $.when.apply(null, loaders).done(function() {
+        carpetOptions.borderStyle = state.borderStyle;
+        carpetOptions.width = parseInt(state.width);
+        carpetOptions.height = parseInt(state.height);
+        carpetOptions.update = state.update;
+        carpetOptions.zoom = state.zoom;
+        if (state.name!="history") carpetOptions.name = state.name;
+
         // callback when everything was loaded
         updateInterface();
         // colorArray = getUniqueColors(palette);
         // setPaletteColors(colorArray);
         setupAndWeave();
+        if (callback) callback();
+        deferred.resolve();
     });
+
+    return deferred.promise();
 }
 
-function load(name) {
+function load(name, callback = undefined) {
     if (window.localStorage) {
         state = JSON.parse(window.localStorage.getItem(name));
         if (!state)
@@ -143,7 +172,7 @@ function load(name) {
         // history.go(-backlen);
         // history.replaceState({}, null, 'index.html');
 
-        loadState(state);
+        loadState(state, callback);
         updateStateLinks();
     }
 }
@@ -458,7 +487,7 @@ function setPaintColors(forCol, bkgCol=undefined) {
 var ind=0;
 var indc="←↖↑↗→↘↓↙";
 function setupAndWeave() {
-    console.log("weaving...", carpetOptions.update, needToWeave);
+    // console.log("weaving...", carpetOptions.update, needToWeave);
     var start = new Date().getTime();
     weave($("#carpet").get(0), carpetOptions);
     var end = new Date().getTime();
@@ -504,8 +533,8 @@ function pickColorHandler(e) {
 $(window).load(function() {
     var palette = addPaintBox("#content", "palette", 4, 8, 30);
     $(palette).unbind().attr('class','palettecanvas');
-    $("#palette").after($("<br/><div id=backcoldiv class='currentcolor paintcanvas'/>"));
-    $("#palette").after($("<br/><div id=forecoldiv class='currentcolor paintcanvas'/>"));
+    $("#palettediv").prepend($("<div id=backcoldiv class='currentcolor paintcanvas'/>"));
+    $("#palettediv").prepend($("<div id=forecoldiv class='currentcolor paintcanvas'/>"));
     addDragDropHandler(palette, function (ctx) {
         colorArray = getUniqueColors(ctx.canvas);
         colorArray.unshift([255,255,255,0]);

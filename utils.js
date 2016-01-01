@@ -48,3 +48,10 @@ $.fn.buttonsetv = function() {
   })
 };
 })( jQuery );
+
+function dataURL2bin(dataURL, callback) {
+    var data = atob( dataURL.substring( "data:image/png;base64,".length ) ),
+    asArray = new Uint8Array(data.length);
+    for( var i = 0, len = data.length; i < len; ++i ) asArray[i] = data.charCodeAt(i);
+    return asArray.buffer;
+};
