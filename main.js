@@ -2,15 +2,17 @@ var xxx;
 var carpetOptions = {};
 
 function updateStateLinks() {
-    if (!window.localStorage) return
+    if (!window.localStorage) return;
     $("#states").html("");
     a = Object.getOwnPropertyNames(window.localStorage);
-    for (i in a)
+    for (var i in a)
     {
         n = a[i];
-        $("#states").append($("<span class='label label-primary statelink'>"+n+"</span>"));
-        $("#states").append($("<span statename='"+n+"' class='label label-success downloadstatelink'><span class='glyphicon glyphicon-download-alt'/></span>"));
-        $("#states").append($("<span statename='"+n+"' class='label label-danger removestatelink'><span class='glyphicon glyphicon-remove'></span>"));
+        if(n.indexOf("savedCarpet_")!==0) continue;
+        sn = n.replace("savedCarpet_", "");
+        $("#states").append($("<span class='label label-primary statelink'>"+sn+"</span>"));
+        $("#states").append($("<span statename='"+sn+"' class='label label-success downloadstatelink'><span class='glyphicon glyphicon-download-alt'/></span>"));
+        $("#states").append($("<span statename='"+sn+"' class='label label-danger removestatelink'><span class='glyphicon glyphicon-remove'></span>"));
         $("#states").append($("<br/>"));
     }
     $(".statelink").click(function(){
@@ -23,7 +25,7 @@ function updateStateLinks() {
     });
     $(".downloadstatelink").click(function(e){
         name = $(this).attr('statename');
-        saveAs(new Blob([window.localStorage[name]]), name+".carpet");
+        saveAs(new Blob([window.localStorage["savedCarpet_"+name]]), name+".carpet");
     });
     $("#states").append($("<br/><span id='zipall' class='label label-success downloadstatelink'>zip all carpets <span class='glyphicon glyphicon-download-alt'/></span>"));
     $("#zipall").click(function(){
@@ -31,9 +33,11 @@ function updateStateLinks() {
         a = Object.getOwnPropertyNames(window.localStorage);
         for (i in a)
         {
+            if(n.indexOf("savedCarpet_")!==0) continue;
+            sn = n.replace("savedCarpet_", "");
             n = a[i];
             b = window.localStorage[n];
-            zip.file(n+".carpet", b);
+            zip.file(sn+".carpet", b);
         }
         var content = zip.generate({type:"blob"});
         d = new Date().toISOString();
@@ -47,6 +51,8 @@ function updateStateLinks() {
         for (var i in a)
         {
             var n = a[i];
+            if(n.indexOf("savedCarpet_")!==0) continue;
+            sn = n.replace("savedCarpet_", "");
             loaders.push(loadState(JSON.parse(window.localStorage.getItem(n)), function() {
                                                 console.log("callback() state loaded and weaved", carpetOptions.name, i);
                                                 setupAndWeave();
@@ -64,38 +70,41 @@ function updateStateLinks() {
 }
 
 function copy(src, dst) {
-    if (window.localStorage) window.localStorage.setItem('dst', window.localStorage.getItem(name));
+    if (window.localStorage) window.localStorage.setItem("savedCarpet_"+dst, window.localStorage.getItem("savedCarpet_"+name));
     updateStateLinks();
 }
 
 function remove(name) {
-    if (window.localStorage) delete window.localStorage[name];
+    if (window.localStorage) delete window.localStorage["savedCarpet_"+name];
     updateStateLinks();
 }
 
-function save(name) {
+function save(name, confirmOverWrite=false) {
+    if (!window.localStorage) return;
+
     console.log("saving state", name);
-    if (window.localStorage) {
-        state = {
-            name : name,
-            tassel : carpetOptions.tassel.toDataURL("image/png"),
-            palette : carpetOptions.palette.toDataURL("image/png"),
-            corner : carpetOptions.corner.toDataURL("image/png"),
-            border1 : carpetOptions.border1.toDataURL("image/png"),
-            border2 : carpetOptions.border2.toDataURL("image/png"),
-            outside : carpetOptions.outside.toDataURL("image/png"),
-            inside : carpetOptions.inside.toDataURL("image/png"),
-            borderStyle : carpetOptions.borderStyle,
-            zoom : carpetOptions.zoom,
-            update : carpetOptions.update,
-            width : carpetOptions.width,
-            height : carpetOptions.height,
-        };
-        history.pushState(state, "", window.location.href);
-        if (window.localStorage) {
-            window.localStorage.setItem(name, JSON.stringify(state, null, "\t"));
-        }
-    }
+    state = {
+        name : name,
+        tassel : carpetOptions.tassel.toDataURL("image/png"),
+        palette : carpetOptions.palette.toDataURL("image/png"),
+        corner : carpetOptions.corner.toDataURL("image/png"),
+        border1 : carpetOptions.border1.toDataURL("image/png"),
+        border2 : carpetOptions.border2.toDataURL("image/png"),
+        outside : carpetOptions.outside.toDataURL("image/png"),
+        inside : carpetOptions.inside.toDataURL("image/png"),
+        update : carpetOptions.update,
+        borderStyle : carpetOptions.borderStyle,
+        duplicateRows : carpetOptions.duplicateRows,
+        width : carpetOptions.width,
+        height : carpetOptions.height,
+        zoom : carpetOptions.zoom,
+    };
+    history.pushState(state, "", window.location.href);
+    if (name=="__history__") return;
+
+    createState(name, JSON.stringify(state, null, "\t"), confirmOverWrite);
+
+    window.localStorage.setItem('lastSave', name);
     updateStateLinks();
 }
 
@@ -104,13 +113,13 @@ window.onpopstate = function(event) {
     if (event.state !== null) {
       loadState(event.state);
     }
-}
+};
 
 function loadImageDataIntoCanvas(canvas, imageData) {
     var deferred = $.Deferred();
     var img = new Image();
     img.onload = function() {
-        if (img.width==0) {
+        if (img.width<=0) {
             console.error("image empty", img);
             return;
         }
@@ -119,13 +128,13 @@ function loadImageDataIntoCanvas(canvas, imageData) {
         canvasScaleCSS(canvas, canvas.sclx, canvas.scly);
         canvas.getContext("2d").drawImage(img, 0, 0);
         deferred.resolve();
-    }
+    };
     img.src = imageData;
     return deferred.promise();
 }
 
 function loadState(state, callback = undefined) {
-    console.log("loadState()")
+    console.log("loadState()");
     var deferred = $.Deferred();
 
     // deferring image loading http://stackoverflow.com/questions/8645143/wait-for-image-to-be-loaded-before-going-on
@@ -139,17 +148,18 @@ function loadState(state, callback = undefined) {
     loaders.push(loadImageDataIntoCanvas(palette, state.palette));
 
     $.when.apply(null, loaders).done(function() {
+        carpetOptions.update = state.update;
         carpetOptions.borderStyle = state.borderStyle;
+        carpetOptions.duplicateRows = state.duplicateRows===undefined ? "none" : state.duplicateRows;
         carpetOptions.width = parseInt(state.width);
         carpetOptions.height = parseInt(state.height);
-        carpetOptions.update = state.update;
         carpetOptions.zoom = state.zoom;
-        if (state.name!="history") carpetOptions.name = state.name;
+        if (state.name!="__history__") carpetOptions.name = state.name;
 
         // callback when everything was loaded
         updateInterface();
-        // colorArray = getUniqueColors(palette);
-        // setPaletteColors(colorArray);
+        colorArray = getUniqueColors(palette);
+        setPaletteColors(colorArray);
         setupAndWeave();
         if (callback) callback();
         deferred.resolve();
@@ -160,13 +170,14 @@ function loadState(state, callback = undefined) {
 
 function load(name, callback = undefined) {
     if (window.localStorage) {
-        state = JSON.parse(window.localStorage.getItem(name));
+        state = JSON.parse(window.localStorage.getItem("savedCarpet_"+name));
         if (!state)
         {
-            console.error("no such state",name);wung
+            console.error("load() : no such state",name);
             return;
         }
         console.log("loading state:",state.name);
+        window.localStorage.setItem('lastSave', name);
 
         // var backlen = history.length - 1;
         // history.go(-backlen);
@@ -177,12 +188,16 @@ function load(name, callback = undefined) {
     }
 }
 
-function createState(name, stateData) {
+function createState(name, stateData, confirmOverWrite=true) {
+    if (!window.localStorage) return;
+    if (confirmOverWrite &&
+        window.localStorage["savedCarpet_"+name]!==undefined &&
+        window.confirm("Overwrite "+name+"?")) return;
+
     if (typeof stateData === 'object') stateData = JSON.stringify(state, null, "\t");
-    if (window.localStorage && (window.localStorage[name]==undefined || window.confirm("Overwrite "+name+"?"))) {
-        window.localStorage.setItem(name, stateData);
-    }
-    //updateStateLinks();
+
+    window.localStorage.setItem("savedCarpet_"+name, stateData);
+    console.log("createState()", name, "created");
 }
 
 function updateInterface() {
@@ -190,8 +205,9 @@ function updateInterface() {
     $("#height").val(carpetOptions.height).trigger("change");
     $("#zoom").val(carpetOptions.zoom).trigger("change");
     $("#name").val(carpetOptions.name);
-    $("#"+carpetOptions.borderStyle).prop("checked", true).button('refresh');;
-    $("#up"+carpetOptions.update).prop('checked',true).button('refresh');;
+    $("#up"+carpetOptions.update).prop('checked',true).button('refresh');
+    $("#"+carpetOptions.borderStyle).prop("checked", true).button('refresh');
+    $("#"+carpetOptions.duplicateRows).prop("checked", true).button('refresh');
     canvasScaleCSS(carpetOptions.tassel, 30, 10);
     canvasScaleCSS(carpetOptions.outside, 30, 10);
     canvasScaleCSS(carpetOptions.inside, 30, 10);
@@ -207,13 +223,13 @@ var draw = {
     saveColor: function(x, y, ctx=undefined) {
         this.colorSaved[0] = x;
         this.colorSaved[1] = y;
-        if (ctx!=undefined && ctx instanceof CanvasRenderingContext2D) {
-            this.colorSaved[2] = ctx.getPixel(coordinates.x, coordinates.y)
+        if (ctx!==undefined && ctx instanceof CanvasRenderingContext2D) {
+            this.colorSaved[2] = ctx.getPixel(coordinates.x, coordinates.y);
         }
         this.colorSaved[3] = ctx;
     },
     restoreColor: function() {
-        if (this.colorSaved[3] != undefined && this.colorSaved[3] instanceof CanvasRenderingContext2D)
+        if (this.colorSaved[3] !== undefined && this.colorSaved[3] instanceof CanvasRenderingContext2D)
             this.colorSaved[3].setPixel(this.colorSaved[0], this.colorSaved[1], this.colorSaved[2]);
     },
     mouseenter: function(ctx, coordinates, color) {
@@ -225,7 +241,7 @@ var draw = {
     },
     mousemove: function(ctx, coordinates, color) {
         this.restoreColor();
-        this.saveColor(coordinates.x, coordinates.y, ctx)
+        this.saveColor(coordinates.x, coordinates.y, ctx);
         ctx.setPixel(coordinates.x, coordinates.y, color);
         if (this.isDrawing) {
             this.colorSaved[2] = color.slice();
@@ -234,7 +250,7 @@ var draw = {
     },
     mouseup: function(ctx, coordinates, color) {
         this.isDrawing = false;
-        save("history");
+        save("__history__");
     },
     mouseout: function() {
         this.mouseleave();
@@ -255,7 +271,7 @@ var move = {
         {
             cx = coordinates.x;
             cy = coordinates.y;
-            //save("history");
+            //save("__history__");
         }
         this.isMoving = true;
     },
@@ -270,7 +286,7 @@ var move = {
     },
     mouseup: function(ctx, coordinates) {
         this.isMoving = false;
-        save("history");
+        save("__history__");
     },
     mouseout: function() {
         this.mouseleave();
@@ -295,11 +311,11 @@ function mouseEventHandler(e) {
     if (!this.ctx) ctx = ctx.getContext("2d");
     ctx = this.ctx;
 
-    if ((e.buttons & 1)==0)
+    if ((e.buttons & 1)===0)
     {
         if (draw.isDrawing || move.isMoving)
         {
-            save("history");
+            save("__history__");
         }
         draw.isDrawing = false;
         move.isMoving = false;
@@ -321,7 +337,7 @@ function mouseEventHandler(e) {
         $(this).css( 'cursor', 'crosshair' );
         draw[e.type](ctx, coordinates, foregroundColor);
     }
-};
+}
 
 function addDragDropHandler(canvas, onLoadCallback = undefined) {
     var context = canvas.getContext("2d"),
@@ -366,11 +382,11 @@ function addDragDropHandler(canvas, onLoadCallback = undefined) {
 // text on button, array of id|attribute, change amount
 function createSizeButton(text, arrIdAttr, change) {
     b = $("<button/>").html(text);
-    b.attr('class', 'smallbut')
+    b.attr('class', 'smallbut');
     b.first()[0].arr = arrIdAttr;
     b.first()[0].chg = change;
     b.click(function (){
-        for (v of this.arr)
+        for (var v of this.arr)
         {
             a = v.split("|");
             cnv = $(a[0]).get(0);
@@ -385,7 +401,7 @@ function createSizeButton(text, arrIdAttr, change) {
 // text on button, id
 function createRotateButton(text, arrIdAttr) {
     b = $("<button/>").html(text);
-    b.attr('class', 'smallbut')
+    b.attr('class', 'smallbut');
     b.first()[0].trg = arrIdAttr;
     b.click(function (){
         canvasRotate90($(this.trg).get(0));
@@ -397,7 +413,7 @@ function createRotateButton(text, arrIdAttr) {
 // text on button, id
 function createFlipButton(text, arrIdAttr) {
     b = $("<button/>").html(text);
-    b.attr('class', 'smallbut')
+    b.attr('class', 'smallbut');
     b.first()[0].trg = arrIdAttr;
     b.click(function (){
         canvasFlip($(this.trg).get(0));
@@ -409,12 +425,12 @@ function createFlipButton(text, arrIdAttr) {
 // text selector direction
 function createShiftButton(text, sel, drn=1) {
     b = $("<button/>").html(text);
-    b.attr('class', 'smallbut')
+    b.attr('class', 'smallbut');
     b.first()[0].drn = drn;
     b.first()[0].sel = sel;
     b.click(function (){
         a = $(this.sel);
-        if (a.length==0) return;
+        if (a.length===0) return;
         c = canvasCreate(1, 1);
         canvasCloneInto(a[0], c);
         for (i=1; i<a.length; i++) {
@@ -450,7 +466,7 @@ function addPaintBox(parentDivId, id, width, height, scale) {
     canvasScaleCSS(cnv, scale);
     div = $(parentDivId).first();
 
-    innerdiv = $("<div/>")
+    innerdiv = $("<div/>");
     innerdiv.attr('id', id+'div');
     innerdiv.attr('class', 'paintdiv');
 
@@ -463,22 +479,24 @@ function addPaintBox(parentDivId, id, width, height, scale) {
 }
 
 function setPaletteColors(colorArray) {
-    ctx = $("#palette").get(0).getContext("2d");
+    cnv = $("#palette").get(0);
+    ctx = cnv.getContext("2d");
     x=0;
     y=0;
     for(var index in colorArray)
     {
         ctx.setPixel(x, y, colorArray[index]);
         x++;
-        if (x>ctx.canvas.width-1) { x=0; y++; }
+        if (x>=ctx.canvas.width) { x=0; y++; }
     }
+    canvasSetSize(cnv, cnv.width, Math.max(y,4));
 }
 
 function setPaintColors(forCol, bkgCol=undefined) {
     foregroundColor = forCol;
     $("#forecoldiv").first().css("background-color", color2rgba(foregroundColor));
 
-    if (bkgCol!=undefined) {
+    if (bkgCol!==undefined) {
         backgroundColor = bkgCol;
         $("#backcoldiv").first().css("background-color", color2rgba(backgroundColor));
     }
@@ -509,7 +527,6 @@ function weaveInterval() {
                         break;
         default:
                         return;
-                        break;
     }
     setupAndWeave();
 }
@@ -600,8 +617,9 @@ $(window).load(function() {
     $("#border2div").prepend(createSizeButton("W-", ["#border2|width"], -1));
     $("#border2div").prepend(createSizeButton("W+", ["#border2|width"], 1));
 
-    $("#radioupdate").buttonsetv();
-    $("#radioborder").buttonsetv();
+    $("#radioupdate").buttonset();
+    $("#radioborder").buttonset();
+    $("#radioduprows").buttonset();
 
     // save
     $(document).bind('keydown', 'ctrl+s', function() { save(carpetOptions.name); } );
@@ -626,17 +644,18 @@ $(window).load(function() {
     $("#zoom").change(function() { carpetOptions.zoom = parseFloat($(this).val()); canvasScaleCSS($("#carpet").get(0), carpetOptions.zoom); });
     $("#name").change(function() { carpetOptions.name = $(this).val(); });
 
+    $("#upauto").click(function() { carpetOptions.update="auto"; });
+    $("#upchange").click(function() { carpetOptions.update="change"; });
+    $("#upmanual").click(function() { carpetOptions.update="manual";  });
     $("#AA, #AB, #ABA").click( function() { carpetOptions.borderStyle = this.id; needToWeave=true;} );
-    $("#upauto").click(function() { carpetOptions.update="auto"; })
-    $("#upchange").click(function() { carpetOptions.update="change"; })
-    $("#upmanual").click(function() { carpetOptions.update="manual";  })
+    $("#none, #Afirst, #Alast, #Bfirst, #Blast").click( function() { carpetOptions.duplicateRows = this.id; needToWeave=true;} );
 
     // dropzone drag http://stackoverflow.com/questions/6848043/how-do-i-detect-a-file-is-being-dragged-rather-than-a-draggable-element-on-my-pa
     var dragTimer;
     $(document).on('dragover', function(evt) {
         evt.preventDefault();
         var dt = evt.originalEvent.dataTransfer;
-        if(dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
+        if(dt.types !== null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
             $("#dropzone").show();
             $("#states").hide();
             window.clearTimeout(dragTimer);
@@ -670,23 +689,24 @@ $(window).load(function() {
                 }
                 // zip archive of .carpet files
                 if (typeof FileReader !== "undefined" && file.name.indexOf(".zip") != -1) {
-                    var reader = new FileReader();
-                    reader.onload = function (evt) {
-                        var zip = xxx = new JSZip(evt.target.result);
+                    var reader2 = new FileReader();
+                    reader2.onload = function (evt) {
+                        var zip = new JSZip(evt.target.result);
                         a = zip.file(/\.carpet/);
                         console.log(a);
                         for (i=0; i<a.length; i++)
                         {
                             n = a[i].name;
                             console.log(i, n);
-                            createState(n.replace(".carpet", ""), zip.file(n).asText());
-                            // console.log(n.replace(".carpet", ""), zip.file(n).asText());
+                            console.log(n.replace(".carpet", ""), zip.file(n).asText());
+                            createState(n.replace(".carpet", ""), zip.file(n).asText(), false);
+                            //console.log(n);
                         }
                         updateStateLinks();
-                    }
+                    };
+                    reader2.readAsBinaryString(file);
                 }
-                reader.readAsBinaryString(file);
-            }
+            };
             var file = files[i];
             readOneFile(file);
         }
@@ -710,18 +730,24 @@ $(window).load(function() {
             zoom : 2,
             width : 320,
             height : 200,
-            borderStyle : 'AA',
             update : "change",
+            borderStyle : 'AA',
+            duplicateRows : "none",
     };
-//    if (window.localStorage.getItem('lastStateName'))
-    load(carpetOptions.name);
+
+    if (window.localStorage)
+    {
+        var lastSave = window.localStorage.getItem('lastSave');
+        if (lastSave!==undefined) carpetOptions.name = lastSave;
+        load(carpetOptions.name);
+    }
 
     var updateIntervalId = setInterval(weaveInterval, 250);
     updateStateLinks();
     updateInterface();
 
-    $("#defaultState").click(function(){
-        window.localStorage.setItem("defaultStateName", '{"name":"defaultStateName","tassel":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAICAYAAAA4GpVBAAAADklEQVQIW2NkAAJGwgQAANwACRGrlc8AAAAASUVORK5CYII=","palette":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAICAYAAADeM14FAAAAPUlEQVQIW2NkYGD439DQwFBfX8/ACAIggTorFYZ55+0YMr/PY2A8UCD4X8FSkMH4YDXDy0nxDCAVKIAaAgCQ7w+A+BrDqgAAAABJRU5ErkJggg==","corner":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAZ0lEQVQoU2NkIBEwEqO+lYHhP0wdXg3ICvFqwKbwp5UKWA+GDeiKYQqbjt0Bq0XRgE0xTCFWJyFrAJmMrhjFBmIUY9WAzWThrLn/305LRvgBn+kgxTD3gzSBdcE04HI3ThtwaUBODQCMrznw6Ku7GAAAAABJRU5ErkJggg==","border1":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAw0lEQVQ4T52UwQ3DMAhF8akDZIVMkXV66wqReqjUFXrrOpkiK2SAnlz9SN/CJBS73Gz4fkAgSTptuL3z9rqmHll6imQtmEXKA/dpzI9lLWcAGKtBNs6+eYDgEYIQ/JlGsSALuCxrpbFVJmTBSwTTAGJGFsQYaKnR8fBDQ6t6q0U2G91G+mxbeG+TqiCe6AwQgbSmQP4BtIJ2SGvZ3thGbd4hrR/Qg0QDU+1ENIrRAnqjf5guvRNeG89gv5a46/cQVeL5v6gucPDCqktHAAAAAElFTkSuQmCC","border2":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAMCAYAAACnfgdqAAAAKklEQVQIW2NkQAKMrQwM/2F8VE6dlQpCBkUPuRyQXdUMDIyo9oBMg8kAANo2CnTYAFM5AAAAAElFTkSuQmCC","outside":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAQCAYAAADXnxW3AAAAL0lEQVQIW2NkAAJGBNHKwPCfEUzUWan8ZzxQIPif8cFKpf+Mwllz/yOpQ9MG5wIAQWgL9zVxjP8AAAAASUVORK5CYII=","inside":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAQCAYAAADXnxW3AAAAHUlEQVQIW2NkAAJGBNHGwPCfsd5c/j+SGJoSvFwAyaUDareT8JQAAAAASUVORK5CYII=","width":320,"height":200}');
-        load('defaultStateName');
-    });
+    // $("#defaultState").click(function(){
+    //     window.localStorage.setItem("defaultStateName", '{"name":"defaultStateName","tassel":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAICAYAAAA4GpVBAAAADklEQVQIW2NkAAJGwgQAANwACRGrlc8AAAAASUVORK5CYII=","palette":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAICAYAAADeM14FAAAAPUlEQVQIW2NkYGD439DQwFBfX8/ACAIggTorFYZ55+0YMr/PY2A8UCD4X8FSkMH4YDXDy0nxDCAVKIAaAgCQ7w+A+BrDqgAAAABJRU5ErkJggg==","corner":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAZ0lEQVQoU2NkIBEwEqO+lYHhP0wdXg3ICvFqwKbwp5UKWA+GDeiKYQqbjt0Bq0XRgE0xTCFWJyFrAJmMrhjFBmIUY9WAzWThrLn/305LRvgBn+kgxTD3gzSBdcE04HI3ThtwaUBODQCMrznw6Ku7GAAAAABJRU5ErkJggg==","border1":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAw0lEQVQ4T52UwQ3DMAhF8akDZIVMkXV66wqReqjUFXrrOpkiK2SAnlz9SN/CJBS73Gz4fkAgSTptuL3z9rqmHll6imQtmEXKA/dpzI9lLWcAGKtBNs6+eYDgEYIQ/JlGsSALuCxrpbFVJmTBSwTTAGJGFsQYaKnR8fBDQ6t6q0U2G91G+mxbeG+TqiCe6AwQgbSmQP4BtIJ2SGvZ3thGbd4hrR/Qg0QDU+1ENIrRAnqjf5guvRNeG89gv5a46/cQVeL5v6gucPDCqktHAAAAAElFTkSuQmCC","border2":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAMCAYAAACnfgdqAAAAKklEQVQIW2NkQAKMrQwM/2F8VE6dlQpCBkUPuRyQXdUMDIyo9oBMg8kAANo2CnTYAFM5AAAAAElFTkSuQmCC","outside":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAQCAYAAADXnxW3AAAAL0lEQVQIW2NkAAJGBNHKwPCfEUzUWan8ZzxQIPif8cFKpf+Mwllz/yOpQ9MG5wIAQWgL9zVxjP8AAAAASUVORK5CYII=","inside":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAQCAYAAADXnxW3AAAAHUlEQVQIW2NkAAJGBNHGwPCfsd5c/j+SGJoSvFwAyaUDareT8JQAAAAASUVORK5CYII=","width":320,"height":200}');
+    //     load('defaultStateName');
+    // });
 });

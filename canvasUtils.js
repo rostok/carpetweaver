@@ -29,7 +29,7 @@ function canvasSetSize(cnv, w, h)
 
 function canvasScaleCSS(cnv, scaleX, scaleY=-1)
 {
-    if (scaleX==undefined || scaleX<0) scaleX = 1;
+    if (scaleX===undefined || scaleX<0) scaleX = 1;
     if (scaleY<0) scaleY = scaleX;
     $(cnv).css('width', cnv.width*scaleX);
     $(cnv).css('height', cnv.height*scaleY);
@@ -40,7 +40,7 @@ function canvasScaleCSS(cnv, scaleX, scaleY=-1)
 function canvasClear(canvas)
 {
     canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-};
+}
 
 // Manuel Rülke / http://homecoded.com/blog-entry-148.html
 function getUniqueColors(canvas)
@@ -72,8 +72,8 @@ function getUniqueColors(canvas)
     var elementsToProcess = w * h;
     var elementsProcessed = 0;
 
-    var colorArray = new Array();
-    var colorArrayOut = new Array();
+    var colorArray = [];
+    var colorArrayOut = [];
 
     for (y=0; y<h; y++)
     {
@@ -87,7 +87,7 @@ function getUniqueColors(canvas)
 
             var color = red << 16 | green << 8 | blue;
             var colorString = color.toString();
-            if ( colorArray[colorString] == null)
+            if ( colorArray[colorString] === null)
                 colorArray[colorString] = 1;
             else
                 colorArray[colorString] += 1;
@@ -98,12 +98,12 @@ function getUniqueColors(canvas)
     var colors = 0;
     var htmlColor;
 
-    for(var i in colorArray)
+    for(var c in colorArray)
     {
-        colorArray[i] = [i>>16, (i>>8)&0xff, i&0xff, 255];
-        colorArrayOut[colors] = colorArray[i];
+        colorArray[c] = [c>>16, (c>>8)&0xff, c&0xff, 255];
+        colorArrayOut[colors] = colorArray[c];
         colors++;
-//        htmlColor = "#" + parseInt(i, 10).toString(16).toUpperCase();
+//        htmlColor = "#" + parseInt(c, 10).toString(16).toUpperCase();
 //        repString += "<sp"+"an style='background-color:" + htmlColor +"; border: 1px solid black;'>&nbsp;&nbsp;&nbsp;&nbsp;<"+"/span> color " + htmlColor + " : " + colorArray[i] + "<br>";
     }
 
@@ -177,7 +177,7 @@ function canvasRectPx(cnv, x, y, x2, y2, color=[0,0,0], width=1.05)
 function canvasAddRim(cnv, color)
 {
     if (typeof(color)=='object' && typeof(color[0])=='object') {
-        for (i = color.length - 1; i >= 0; --i) canvasAddRim(cnv, color[i]);
+        for (i = color.length-1; i >= 0; --i) canvasAddRim(cnv, color[i]);
     }
     else {
         old = canvasClone(cnv);
@@ -197,6 +197,13 @@ function canvasInsertColumns(cnv, x, w=1)
     ctx = cnv.getContext('2d');
     if (x>0) ctx.drawImage(old, 0, 0, x, old.height, 0, 0, x, old.height);
     if (old.width>x) ctx.drawImage(old, x, 0, old.width-x, old.height, x+w, 0, old.width-x, old.height);
+}
+
+function canvasDuplicateColumn(cnv, x, w=1)
+{
+    canvasInsertColumns(cnv, x, w);
+    ctx = cnv.getContext('2d');
+    ctx.drawImage(cnv, x+w, 0, 1, cnv.height, x, 0, w, cnv.height);
 }
 
 function canvasInsertRows(cnv, y, h=1)

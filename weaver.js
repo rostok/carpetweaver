@@ -1,7 +1,7 @@
 // count colors in first/single column and return array
 function getSingleColumnColors(ctx)
 {
-    r = new Array();
+    r = [];
     for (y=0; y<ctx.canvas.height; y++)
     {
         c = ctx.getPixel(0,y);
@@ -14,7 +14,7 @@ function getSingleColumnColors(ctx)
 function createBorderStrip(o, maxWidth, borderStyle, br1, br2, cor)
 {
     cor_width = 0;
-    if (cor==undefined) {
+    if (cor===undefined) {
         canvasCloneInto(br1, o);
     }
     else {
@@ -42,11 +42,33 @@ function createBorderStrip(o, maxWidth, borderStyle, br1, br2, cor)
             while (o.width + next.width + cor_width <= maxWidth) canvasConcat(o, next);
             break;
     }
-    if (cor!=undefined) {
+    if (cor!==undefined) {
         t = canvasClone(cor);
         //canvasRotate90(t);
         canvasFlip(t);
         canvasConcat(o, t);
+    }
+}
+
+// duplicate rows in canvas according to style, last 3 args: corner width, border 1 width, border 2 width
+function duplicateRows(cnv, width, style, cw, b1w, b2w)
+{
+    if (width<=0 || style=="none") return;
+
+    switch (style)
+    {
+        case "Afirst":
+            canvasDuplicateColumn(cnv, cw, width);
+            break;
+
+        case "Alast":
+            break;
+
+        case "Bfirst":
+            break;
+
+        case "Blast":
+            break;
     }
 }
 
@@ -87,9 +109,10 @@ function weave(o, options)
     canvasFlip(db);
     canvasStack(o, db);
 
-    // create left & rifht borders and insert them
+    // create left & right borders and insert them
     t = canvasCreate();
     createBorderStrip(t, nrh-cor.height*2, options.borderStyle, br1, br2);
+    duplicateRows(t, nrh-cor.height*2-t.width, options.duplicateRows, 0, br1.width, br2.width);
     canvasRotate90(t);
     db = canvasClone(t);
     canvasFlip(db);
@@ -100,6 +123,7 @@ function weave(o, options)
     canvasPaste(o, db, o.width-cor.width, cor.height);
 
     canvasSetSize(o, o.width, o.height);
+
     // put inner rims
     x = cor.width;
     y = cor.height;
@@ -115,7 +139,7 @@ function weave(o, options)
     }
 
     // finaly outer rims
-    canvasAddRim(o, outrim);
+    if (outrim.length>0) canvasAddRim(o, outrim);
 
     // tassels
     t = canvasCreate(1, o.height);
@@ -138,6 +162,8 @@ function weave(o, options)
         }
     }
 
+    ow = o.width;
+    oh = o.height;
     while (o.height<options.height)
     {
         if (o.height%2)
@@ -148,7 +174,7 @@ function weave(o, options)
 
     // print the dimensions
     o.ctx.fillStyle = "black";
-    o.ctx.font = "bold 16px Arial";
+    o.ctx.font = "bold 14px Arial";
     o.ctx.textAlign="center";
-    o.ctx.fillText(""+o.width+"x"+o.height, o.width/2,o.height/2);
+    o.ctx.fillText("PNG:"+options.width+"x"+options.height+" / CRP:"+ow+"x"+oh, o.width/2,o.height/2);
 }

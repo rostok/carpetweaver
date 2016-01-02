@@ -31,27 +31,27 @@ function color2rgba(p) {
 }
 
 // https://gist.github.com/edersohe/760885
-(function( $ ){
-//plugin buttonset vertical
-$.fn.buttonsetv = function() {
-  $(':radio, :checkbox', this).wrap('<div style="margin: 1px"/>');
-  $(this).buttonset();
-  $('label:first', this).removeClass('ui-corner-left').addClass('ui-corner-top');
-  $('label:last', this).removeClass('ui-corner-right').addClass('ui-corner-bottom');
-  mw = 0; // max witdh
-  $('label', this).each(function(index){
-     w = $(this).width();
-     if (w > mw) mw = w;
-  })
-  $('label', this).each(function(index){
-    $(this).width(mw);
-  })
-};
-})( jQuery );
+(function($) {
+    //plugin buttonset vertical
+    $.fn.buttonsetv = function() {
+        $(':radio, :checkbox', this).wrap('<div style="margin: 1px"/>');
+        $(this).buttonset();
+        $('label:first', this).removeClass('ui-corner-left').addClass('ui-corner-top');
+        $('label:last', this).removeClass('ui-corner-right').addClass('ui-corner-bottom');
+        mw = 0; // max witdh
+        $('label', this).each(function(index) {
+            w = $(this).width();
+            if (w > mw) mw = w;
+        });
+        $('label', this).each(function(index) {
+            $(this).width(mw);
+        });
+    };
+})(jQuery);
 
 function dataURL2bin(dataURL, callback) {
     var data = atob( dataURL.substring( "data:image/png;base64,".length ) ),
     asArray = new Uint8Array(data.length);
     for( var i = 0, len = data.length; i < len; ++i ) asArray[i] = data.charCodeAt(i);
     return asArray.buffer;
-};
+}
