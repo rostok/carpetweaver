@@ -33,9 +33,9 @@ function updateStateLinks() {
         a = Object.getOwnPropertyNames(window.localStorage);
         for (i in a)
         {
+            n = a[i];
             if(n.indexOf("savedCarpet_")!==0) continue;
             sn = n.replace("savedCarpet_", "");
-            n = a[i];
             b = window.localStorage[n];
             zip.file(sn+".carpet", b);
         }
@@ -635,6 +635,24 @@ $(window).load(function() {
         canvasFloodfill2(cnv, draw.colorSaved[0], draw.colorSaved[1], foregroundColor);
         draw.saveColor(draw.colorSaved[0], draw.colorSaved[1], foregroundColor);
     } );
+
+    // http://stackoverflow.com/questions/6333814/how-does-the-paste-image-from-clipboard-functionality-work-in-gmail-and-google-c
+    document.onpaste = function(event){
+      var items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      console.log(JSON.stringify(items)); // will give you the mime types
+      for (var index in items) {
+        var item = items[index];
+        if (item.kind === 'file') {
+          var blob = item.getAsFile();
+          var reader = new FileReader();
+          reader.onload = function(event){
+            console.log(event.target.result);
+            loadImageDataIntoCanvas(draw.colorSaved[3].canvas, event.target.result);
+          }; // data url!
+          reader.readAsDataURL(blob);
+        }
+      }
+    };
 
     // swap colors
     $(document).bind('keydown', 'x', function() { setPaintColors(backgroundColor, foregroundColor); } );

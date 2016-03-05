@@ -138,6 +138,13 @@ function weave(o, options)
         y2--;
     }
 
+    var innerStartX = x;
+    var innerStartY = y;
+    var innerEndX = x2;
+    var innerEndY = y2;
+	var innerW = innerEndX-innerStartX+1;
+	var innerH = innerEndY-innerStartY+1;
+
     // finaly outer rims
     if (outrim.length>0) canvasAddRim(o, outrim);
 
@@ -176,5 +183,10 @@ function weave(o, options)
     o.ctx.fillStyle = "black";
     o.ctx.font = "bold 14px Arial";
     o.ctx.textAlign="center";
-    o.ctx.fillText("PNG:"+options.width+"x"+options.height+" / CRP:"+ow+"x"+oh, o.width/2,o.height/2);
+    o.ctx.fillText(
+    				"PNG:"+options.width+"x"+options.height+
+//    				" / CRP:"+ow+"x"+oh+
+    				" / INS:"+innerW+"x"+innerH,
+                    o.width/2,o.height/2
+    				);
 }
