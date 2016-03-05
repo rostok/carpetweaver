@@ -13,33 +13,62 @@ function getSingleColumnColors(ctx)
 // o output, maxWidth, bordersStyle (AA/AB/ABA), border1, border2, corner
 function createBorderStrip(o, maxWidth, borderStyle, br1, br2, cor)
 {
-    cor_width = 0;
+    // this object has 4 arrays with columns that can be duplicated according to dup. option
+    var possibleRowDuplicates = { Af:[], Bf:[], Al:[], Bl:[] };
+    var cor_width = 0;
+
     if (cor===undefined) {
         canvasCloneInto(br1, o);
+        possibleRowDuplicates.Af.push(0);
+        possibleRowDuplicates.Al.push(br1.width-1);
     }
     else {
         cor_width = cor.width;
         canvasCloneInto(cor, o);
         canvasConcat(o, br1);
+        possibleRowDuplicates.Af.push(cor.width);
+        possibleRowDuplicates.Al.push(cor.width+br1.width-1);
     }
     switch (borderStyle)
     {
         default:
         case "AA":
             next = br1;
-            while (o.width + next.width + cor_width <= maxWidth) canvasConcat(o, next);
+            while (o.width + next.width + cor_width <= maxWidth) {
+                canvasConcat(o, next);
+                possibleRowDuplicates.Af.push(o.width-br1.width);
+                possibleRowDuplicates.Al.push(o.width-1);
+            }
             break;
         case "AB":
             next = br2;
             while (o.width + next.width + cor_width <= maxWidth) {
                 canvasConcat(o, next);
+                switch (next)
+                {
+                    case br1:
+                        possibleRowDuplicates.Af.push(o.width-br1.width);
+                        possibleRowDuplicates.Al.push(o.width-1);
+                        break;
+                    case br2:
+                        possibleRowDuplicates.Bf.push(o.width-br2.width);
+                        possibleRowDuplicates.Bl.push(o.width-1);
+                        break;
+                }
                 next = next == br1 ? br2 : br1;
             }
             break;
         case "ABA":
             next = canvasClone(br2);
-            canvasConcat(next, br1);
-            while (o.width + next.width + cor_width <= maxWidth) canvasConcat(o, next);
+            canvasConcat(next, br1); // next is BA
+            while (o.width + next.width + cor_width <= maxWidth) {
+                canvasConcat(o, next);
+
+                possibleRowDuplicates.Af.push(o.width-br1.width);
+                possibleRowDuplicates.Al.push(o.width-1);
+                possibleRowDuplicates.Bf.push(o.width-br2.width-br1.width);
+                possibleRowDuplicates.Bl.push(o.width-br1.width-1);
+            }
             break;
     }
     if (cor!==undefined) {
@@ -48,27 +77,50 @@ function createBorderStrip(o, maxWidth, borderStyle, br1, br2, cor)
         canvasFlip(t);
         canvasConcat(o, t);
     }
+    o.possibleRowDuplicates = possibleRowDuplicates;
 }
 
-// duplicate rows in canvas according to style, last 3 args: corner width, border 1 width, border 2 width
-function duplicateRows(cnv, width, style, cw, b1w, b2w)
+// duplicate rows in canvas according to style
+// args: dest canvas, number of added rows, border style (AA/AB/ABA), corner width if any, border 1 width, border 2 width
+function duplicateRows(cnv, rowNum, style, cw, b1w, b2w)
 {
-    if (width<=0 || style=="none") return;
+    if (rowNum<=0 || style=="none") return;
 
+    // first proper array with columns to be duplicated is chosen
+    var arr;
     switch (style)
     {
         case "Afirst":
-            canvasDuplicateColumn(cnv, cw, width);
+            arr = cnv.possibleRowDuplicates.Af;
             break;
 
         case "Alast":
+            arr = cnv.possibleRowDuplicates.Al;
             break;
 
         case "Bfirst":
+            arr = cnv.possibleRowDuplicates.Bf;
             break;
 
         case "Blast":
+            arr = cnv.possibleRowDuplicates.Bl;
             break;
+    }
+    if (arr===undefined || !arr.length) return;
+
+    // create zero filled array for every possible column duplicate
+    // this array's value indicates how many columns will be inserted here
+    var a = Array.apply(null, Array(arr.length)).map(Number.prototype.valueOf,0);
+    var distributed = 0;
+    // evenly distribute 'rowNum' number into 'a' array
+    for (var i=0; i<arr.length; i++)
+    {
+    	distributed += a[i] = Math.round((i+1)*rowNum/(arr.length)-distributed);
+    }
+    // insert columns
+    for (var j=arr.length-1; j>=0; j--)
+    {
+        canvasDuplicateColumn(cnv, arr[j], a[j]);
     }
 }
 
@@ -109,7 +161,7 @@ function weave(o, options)
     canvasFlip(db);
     canvasStack(o, db);
 
-    // create left & right borders and insert them
+    // create left & right borders without corners [bor1/bor2/.../borX] and insert them
     t = canvasCreate();
     createBorderStrip(t, nrh-cor.height*2, options.borderStyle, br1, br2);
     duplicateRows(t, nrh-cor.height*2-t.width, options.duplicateRows, 0, br1.width, br2.width);

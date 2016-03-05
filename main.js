@@ -219,7 +219,7 @@ function updateInterface() {
 
 var draw = {
     isDrawing: false,
-    colorSaved: [-1, -1, [0, 0, 0], undefined],
+    colorSaved: [-1, -1, [0, 0, 0], undefined], // [x, y, [r,g,b], canvas]
     saveColor: function(x, y, ctx=undefined) {
         this.colorSaved[0] = x;
         this.colorSaved[1] = y;
