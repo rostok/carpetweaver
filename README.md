@@ -13,19 +13,19 @@ image panels in the first row are:
 
 ###options
 * update - set carpet weaving method, it can be
-** automatic - weaving may take 20-100ms
-** on change - only when change is applied
-** manual - only when render button is pressed (one with flash)
+  * automatic - weaving may take 20-100ms
+  * on change - only when change is applied
+  * manual - only when render button is pressed (one with flash)
 * border - sets how borders is looped
-** AA - border A canvas is duplicated
-** AB - border A and B are placed one after other
-** ABA - as above but A is always ending the strip
+  * AA - border A canvas is duplicated
+  * AB - border A and B are placed one after other
+  * ABA - as above but A is always ending the strip
 * duplicate rows - in case border is too short some rows/columns may be duplicated (not ready yet)
-** void - first option turns this off
-** border A first column
-** border A last column
-** border B first column
-** border B last column
+  * void - first option turns this off
+  * border A first column
+  * border A last column
+  * border B first column
+  * border B last column
 
 
 ###keys (image panels):
